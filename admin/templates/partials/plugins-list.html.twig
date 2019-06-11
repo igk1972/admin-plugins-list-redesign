@@ -1,0 +1,166 @@
+{% set gumroad_loaded = false %}
+<div class="grav-update plugins"></div>
+{% if installing %}
+    {% include 'partials/release-toggle.html.twig' %}
+{% endif %}
+{% include 'partials/list-sort.html.twig' with { list_view: 'plugins' } %}
+<h1>
+    {{ installing ? "PLUGIN_ADMIN.AVAILABLE_PLUGINS"|tu : "PLUGIN_ADMIN.INSTALLED_PLUGINS"|tu }}
+</h1>
+<form>
+    <div class="gpm-search">
+        <input type="text" placeholder="{{ "PLUGIN_ADMIN.RESOURCE_FILTER"|tu }}" data-gpm-filter>
+    </div>
+</form>
+
+<style>
+.plugins-grid {
+    display: flex;
+    flex-wrap: wrap;
+}
+.plugins-grid-item {
+    display: block;
+    max-width: 100%;
+    min-width: 100%;
+    padding: 1rem;
+    margin-bottom: 2rem;
+}
+@media (min-width: 1560px) {
+    .plugins-grid-item {
+        max-width: 20%;
+        min-width: 20%;
+    }
+}
+@media (min-width: 1387px) {
+    .plugins-grid-item {
+        max-width: 25%;
+        min-width: 25%;
+    }
+}
+@media (min-width: 1025px) and (max-width: 1386px) {
+    .plugins-grid-item {
+        max-width: 33%;
+        min-width: 33%;
+    }
+}
+@media (min-width: 768px) and (max-width: 1024px) {
+    .plugins-grid-item {
+        max-width: 50%;
+        min-width: 50%;
+    }
+}
+.plugins-grid-item-part {
+}
+.gpm-details .table-wrapper {
+    display: none;
+}
+.gpm-actions {
+    text-align: right;
+}
+.gpm-cover {
+    min-height: 7rem;
+    text-align: center;
+}
+.gpm-cover-icon {
+}
+
+.gpm-cover .card__header {
+    margin: 0 auto;
+    /*font-size: 10rem;*/
+    color: rgba(255,255,255,.7);
+}
+.card__header {
+    position: relative;
+    /*top: 50%;*/
+    display: inline-block;
+    margin: 0 auto;
+    opacity: 1;
+    color: #fff;
+    font-size: 3.6rem;
+    /*-webkit-transform: scale(1) translateY(-50%);
+    -moz-transform: scale(1) translateY(-50%);
+    -ms-transform: scale(1) translateY(-50%);
+    -o-transform: scale(1) translateY(-50%);
+    transform: scale(1) translateY(-50%);*/
+    -webkit-transition: opacity 0.3s,-webkit-transform 0.3s;
+    -moz-transition: opacity 0.3s,-moz-transform 0.3s;
+    transition: opacity 0.3s,transform 0.3s;
+}
+.royalblue {
+    background-color: #446CB3!important;
+}
+.green {
+    background-color: #29BAA5!important;
+}
+.blue {
+    background-color: #0EBCF3!important;
+}
+.gold {
+    background-color: #ED7F12!important;
+}
+.gpm .gpm-name {
+    font-size: 1.5em;
+}
+</style>
+
+<div class="plugins-grid">
+    {% for slug, plugin in admin.plugins(not installing).toArray|ksort %}
+        {% set data = admin.data('plugins/' ~ slug) %}
+        {% set isTestingRelease = admin.gpm.isTestingRelease(slug) %}
+        {% set releaseDate = plugin.date ?: admin.gpm.findPackage(slug, true).date %}
+
+        <div class="plugins-grid-item" data-gpm-plugin="{{ slug|url_encode }}" data-gpm-name="{{ plugin.name }}" data-gpm-release-date="{{ releaseDate }}" data-gpm-author="{{ plugin.author.name }}" data-gpm-official="{{ admin.isTeamGrav(plugin) ? '1' : '2' }}" data-gpm-updatable="{{ admin.gpm.isUpdatable(slug) ? '1' : '2' }}" data-gpm-enabled="{{ data.get('enabled') ? '1' : '2' }}" data-gpm-testing="{{ isTestingRelease ? '1' : '2' }}">
+            <div class="gpm-cover plugins-grid-item-part {{ random(['royalblue', 'green', 'gold', 'blue']) }}">
+                <h3 class="card__header"><i class="fa fa-fw fa-{{ plugin.icon }}"></i></h3>
+            </div>
+            <div class="gpm-name quadruple plugins-grid-item-part">
+                <a href="{{ base_url_relative }}/plugins/{{ slug|url_encode }}">{{ plugin.name }}</a>
+                <span class="gpm-details-expand"><i class="fa fa-chevron-down"></i></span>
+                {% if admin.isTeamGrav(plugin) %}
+                    <small><span class="info-reverse"><i class="fa fa-check-circle" title="{{ "PLUGIN_ADMIN.GRAV_OFFICIAL_PLUGIN"|tu }}"></i></span></small>
+                {% endif %}
+                {% if admin.isPremiumProduct(plugin) %}
+                    {% if not gumroad_loaded %}
+                        {% set gumroad_loaded = true %}
+                        <script src="//gumroad.com/js/gumroad.js"></script>
+                    {% endif %}
+                    <small><span class="badge warning premium"><i class="fa fa-star-o"></i> {{ "PLUGIN_ADMIN.PREMIUM_PRODUCT"|tu }}</span></small>
+                {% endif %}
+                {% if plugin.symlink %}
+                <span class="hint--bottom"  data-hint="{{ "PLUGIN_ADMIN.PLUGIN_SYMBOLICALLY_LINKED"|tu }}">
+                    <i class="fa fa-fw fa-link"></i>
+                </span>
+                {% endif %}
+                <span class="gpm-version">v{{ plugin.version }}</span>
+                {% if isTestingRelease %}<span class="gpm-testing">test release</span>{% endif %}
+            </div>
+            <div class="gpm-details plugins-grid-item-part">
+                <div class="table-wrapper">
+                    {% include 'partials/plugin-data.html.twig' with { plugin: plugin } %}
+                </div>
+            </div>
+            <div class="gpm-actions plugins-grid-item-part">
+                {% if (not installing and (plugin.form.fields.enabled.type != 'hidden' and plugin.form.fields.tabs.fields.login.fields.enabled.type != 'hidden')) %}
+                    <a class="{{ data.get('enabled') ? 'enabled' : 'disabled' }}" href="{{ uri.addNonce(base_url_relative ~ '/plugins/' ~ slug ~ '/task' ~ config.system.param_sep ~ (data.get('enabled') ? 'disable' : 'enable'), 'admin-form', 'admin-nonce') }}">
+                        <i class="fa fa-fw fa-toggle-{{ data.get('enabled') ? 'on' : 'off' }}"></i>
+                    </a>
+                {% elseif (installing) %}
+                    {% if (plugin.premium and not admin.license(plugin.slug)) %}
+                        {% if not gumroad_loaded %}
+                            {% set gumroad_loaded = true %}
+                            <script src="//gumroad.com/js/gumroad.js"></script>
+                        {% endif %}
+                        <a class="gumroad-button button" href="https://gum.co/{{ plugin.premium.permalink }}" target="_blank" data-gumroad-single-product="true"><i class="fa fa-shopping-cart"></i> {{ "Buy Now"|tu }}</a>
+                    {% else %}
+                <a class="button" href="#" data-remodal-target="add-package" data-packages-slugs="{{ plugin.slug }}" data-plugin-action="start-package-installation"><i class="fa fa-plus"></i> {{ "PLUGIN_ADMIN.INSTALL"|tu }}</a>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
+    {% else %}
+        <tr><td>{{ "PLUGIN_ADMIN.OFFLINE_WARNING"|tu }}</td></tr>
+    {% endfor %}
+</div>
+
+{% include 'partials/modal-add-package.html.twig' with { type: 'plugin' } %}
+{% include 'partials/modal-update-packages.html.twig' with { type: 'plugin' } %}
