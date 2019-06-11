@@ -1,0 +1,30 @@
+name: Admin Plugins List Redesign
+version: 0.0.1
+description: Admin add-on for override plugins list template.
+icon: list
+author:
+  name: Igor Kuznetsov
+  email: igk@igk.ru
+homepage: https://github.com/igk1972/admin-plugins-list-redesign
+keywords: grav, plugin, plugins, admin
+bugs: https://github.com/igk1972/admin-plugins-list-redesign/issues
+docs: https://github.com/igk1972/admin-plugins-list-redesign/blob/master/README.md
+license: MIT
+
+dependencies:
+- { name: grav, version: '>=1.5.1' }
+- { name: admin, version: '>=1.7.0' }
+
+form:
+  validation: strict
+  fields:
+    enabled:
+      type: toggle
+      label: Plugin status
+      highlight: 1
+      default: 0
+      options:
+        1: Enabled
+        0: Disabled
+      validate:
+        type: bool
